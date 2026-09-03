@@ -9,6 +9,9 @@ import SplashScreen from "../screens/SplashScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterCustomer from "../screens/RegisterCustomer";
 import VerifyCustomerScreen from "../screens/VerifyCustomerScreen";
+import RecoveryPasswordScreen from "../screens/RecoveryPasswordScreen";
+import VerifyRecoveryCodeScreen from "../screens/VerifyRecoveryCodeScreen";
+import NewPasswordScreen from "../screens/NewPasswordScreen";
 import TabMenu from "./TabMenu";
 
 export default function AppContent() {
@@ -16,6 +19,7 @@ export default function AppContent() {
   const showSplash = useSplashTimer(isBooting);
   const [authView, setAuthView] = useState("login");
   const [pendingRegistration, setPendingRegistration] = useState(null);
+  const [recoveryEmail, setRecoveryEmail] = useState(null);
 
   if (showSplash) {
     return <SplashScreen />;
@@ -44,7 +48,45 @@ export default function AppContent() {
       );
     }
 
-    return <LoginScreen onOpenRegister={() => setAuthView("register")} />;
+    if (authView === "recovery") {
+      return (
+        <RecoveryPasswordScreen
+          onBack={() => setAuthView("login")}
+          onCodeSent={({ email }) => {
+            setRecoveryEmail(email);
+            setAuthView("verifyRecovery");
+          }}
+        />
+      );
+    }
+
+    if (authView === "verifyRecovery") {
+      return (
+        <VerifyRecoveryCodeScreen
+          recoveryEmail={recoveryEmail}
+          onBack={() => setAuthView("recovery")}
+          onVerified={() => setAuthView("newPassword")}
+        />
+      );
+    }
+
+    if (authView === "newPassword") {
+      return (
+        <NewPasswordScreen
+          onFinish={() => {
+            setRecoveryEmail(null);
+            setAuthView("login");
+          }}
+        />
+      );
+    }
+
+    return (
+      <LoginScreen
+        onOpenRegister={() => setAuthView("register")}
+        onOpenRecovery={() => setAuthView("recovery")}
+      />
+    );
   }
 
   return (

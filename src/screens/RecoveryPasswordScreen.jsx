@@ -8,13 +8,20 @@ import {
   View,
 } from "react-native";
 import InputEmail from "../components/Inputs/InputEmail";
-import InputPassword from "../components/Inputs/InputPassword";
 import CustomButton from "../components/Buttons/CustomButton";
-import { useLoginForm } from "../hooks/useLoginForm";
+import { useRecoveryPasswordForm } from "../hooks/useRecoveryPasswordForm";
 
-export default function LoginScreen({ onOpenRegister, onOpenRecovery }) {
-  const { email, setEmail, password, setPassword, loading, error, submit } =
-    useLoginForm();
+export default function RecoveryPasswordScreen({ onBack, onCodeSent }) {
+  const { email, setEmail, loading, error, success, requestCode } =
+    useRecoveryPasswordForm();
+
+  const handleRequestCode = async () => {
+    const ok = await requestCode();
+
+    if (ok && onCodeSent) {
+      onCodeSent({ email });
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -22,8 +29,11 @@ export default function LoginScreen({ onOpenRegister, onOpenRecovery }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Iniciar sesión</Text>
-        <Text style={styles.subtitle}>Bienvenido a tu app de pizzas</Text>
+        <Text style={styles.title}>Recuperar contraseña</Text>
+        <Text style={styles.subtitle}>
+          Ingresa tu correo y te enviaremos un código para restablecer tu
+          contraseña.
+        </Text>
 
         <InputEmail
           placeHolder="Correo"
@@ -32,14 +42,8 @@ export default function LoginScreen({ onOpenRegister, onOpenRecovery }) {
           setEditable={!loading}
         />
 
-        <InputPassword
-          placeHolder="Contraseña"
-          setValor={password}
-          contra
-          setTextChange={setPassword}
-        />
-
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {success ? <Text style={styles.successText}>{success}</Text> : null}
 
         {loading ? (
           <ActivityIndicator
@@ -49,16 +53,15 @@ export default function LoginScreen({ onOpenRegister, onOpenRecovery }) {
           />
         ) : null}
 
-        <CustomButton textButton="Entrar" actionButton={submit} />
+        <CustomButton
+          textButton="Enviar código"
+          actionButton={handleRequestCode}
+          disabled={loading}
+        />
 
-        <TouchableOpacity onPress={onOpenRecovery} style={styles.forgotPrompt}>
-          <Text style={styles.registerLink}>¿Olvidaste tu contraseña?</Text>
-        </TouchableOpacity>
-
-        <View style={styles.registerPrompt}>
-          <Text style={styles.registerText}>No tienes cuenta, </Text>
-          <TouchableOpacity onPress={onOpenRegister}>
-            <Text style={styles.registerLink}>créala aquí</Text>
+        <View style={styles.backPrompt}>
+          <TouchableOpacity onPress={onBack}>
+            <Text style={styles.backLink}>Volver a iniciar sesión</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -85,7 +88,7 @@ const styles = StyleSheet.create({
     borderColor: "#E9D8C3",
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "800",
     color: "#6F3E1F",
   },
@@ -101,25 +104,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
+  successText: {
+    marginTop: 4,
+    color: "#1E7A46",
+    fontSize: 13,
+    fontWeight: "600",
+  },
   loader: {
     marginTop: 10,
   },
-  forgotPrompt: {
-    marginTop: 14,
-    alignItems: "center",
-  },
-  registerPrompt: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+  backPrompt: {
     marginTop: 18,
-    flexWrap: "wrap",
+    alignItems: "center",
   },
-  registerText: {
-    color: "#7A4E32",
-    fontSize: 13,
-  },
-  registerLink: {
+  backLink: {
     color: "#C26D3B",
     fontSize: 13,
     fontWeight: "700",
