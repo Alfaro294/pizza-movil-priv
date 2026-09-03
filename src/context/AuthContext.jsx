@@ -142,6 +142,74 @@ export function AuthProvider({ children }) {
     [],
   );
 
+  // Paso 1: solicita el envio del codigo de recuperacion al correo del usuario.
+  const requestPasswordRecovery = useCallback(async ({ email }) => {
+    const response = await fetch(
+      `${getApiBaseUrl()}/recoveryPassword/requestCode`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      },
+    );
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload?.message ?? "No se pudo enviar el código");
+    }
+
+    return payload;
+  }, []);
+
+  // Paso 2: verifica el codigo enviado por correo contra la cookie temporal.
+  const verifyRecoveryCode = useCallback(async ({ code }) => {
+    const response = await fetch(
+      `${getApiBaseUrl()}/recoveryPassword/verifyCode`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code: code.trim() }),
+      },
+    );
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload?.message ?? "Código inválido");
+    }
+
+    return payload;
+  }, []);
+
+  // Paso 3: define la nueva contraseña una vez el codigo fue verificado.
+  const setNewPassword = useCallback(
+    async ({ newPassword, confirmNewPassword }) => {
+      const response = await fetch(
+        `${getApiBaseUrl()}/recoveryPassword/newPassword`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ newPassword, confirmNewPassword }),
+        },
+      );
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          payload?.message ?? "No se pudo actualizar la contraseña",
+        );
+      }
+
+      return payload;
+    },
+    [],
+  );
+
   // Cierra sesion en backend y limpia el estado/localStorage en la app.
   const logout = useCallback(async () => {
     try {
@@ -163,10 +231,23 @@ export function AuthProvider({ children }) {
       login,
       register,
       verifyRegistrationCode,
+      requestPasswordRecovery,
+      verifyRecoveryCode,
+      setNewPassword,
       logout,
       apiBaseUrl: getApiBaseUrl(),
     }),
-    [isBooting, login, logout, register, user, verifyRegistrationCode],
+    [
+      isBooting,
+      login,
+      logout,
+      register,
+      requestPasswordRecovery,
+      setNewPassword,
+      user,
+      verifyRecoveryCode,
+      verifyRegistrationCode,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
